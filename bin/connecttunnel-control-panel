@@ -144,6 +144,7 @@ class ConnectTunnelControlPanel(QMainWindow):
         exit_btn = QPushButton("❌ Exit Manager")
         exit_btn.setMinimumHeight(40)
         exit_btn.clicked.connect(self.exit_application)
+        exit_btn.setObjectName("exit_btn")
         main_layout.addWidget(exit_btn)
         
         # Status bar
@@ -153,56 +154,92 @@ class ConnectTunnelControlPanel(QMainWindow):
         self.apply_stylesheet()
     
     def apply_stylesheet(self):
-        """Apply modern styling"""
+        """Apply dark-only styling"""
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #f5f5f5;
+                background-color: #121212;
+            }
+            QWidget {
+                color: #f0f0f0;
+                background-color: #121212;
             }
             QGroupBox {
                 font-weight: bold;
-                border: 2px solid #cccccc;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 10px;
+                border: 1px solid #2a2a2a;
+                border-radius: 8px;
+                margin-top: 12px;
+                padding-top: 12px;
+                background-color: #1a1a1a;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
+                left: 12px;
+                padding: 0 6px;
+                color: #cfcfcf;
+            }
+            QLabel {
+                color: #e6e6e6;
+            }
+            QTextEdit {
+                background-color: #1e1e1e;
+                color: #e6e6e6;
+                border: 1px solid #2a2a2a;
+                border-radius: 6px;
+            }
+            QStatusBar {
+                background-color: #1a1a1a;
+                color: #e6e6e6;
+                border-top: 1px solid #2a2a2a;
             }
             QPushButton {
-                background-color: #4CAF50;
-                color: white;
                 border: none;
-                border-radius: 5px;
-                padding: 10px;
+                border-radius: 6px;
+                padding: 12px;
                 font-weight: bold;
+                color: #ffffff;
+                background-color: #2e7d32; /* default to green */
             }
             QPushButton:hover {
-                background-color: #45a049;
+                background-color: #2f9e3a;
             }
             QPushButton:pressed {
-                background-color: #3d8b40;
+                background-color: #267b32;
             }
             QPushButton:disabled {
-                background-color: #cccccc;
-                color: #666666;
+                background-color: #2a2a2a;
+                color: #777777;
             }
             QPushButton#disconnect_btn {
-                background-color: #f44336;
+                background-color: #c62828;
             }
             QPushButton#disconnect_btn:hover {
-                background-color: #da190b;
+                background-color: #e53935;
+            }
+            QPushButton#disconnect_btn:pressed {
+                background-color: #b71c1c;
             }
             QPushButton#exit_btn {
-                background-color: #9E9E9E;
+                background-color: #616161;
             }
             QPushButton#exit_btn:hover {
                 background-color: #757575;
             }
+            QPushButton#exit_btn:pressed {
+                background-color: #424242;
+            }
+            QPushButton#show_window_btn {
+                background-color: #424242;
+            }
+            QPushButton#show_window_btn:hover {
+                background-color: #4f4f4f;
+            }
+            QPushButton#show_window_btn:pressed {
+                background-color: #3a3a3a;
+            }
         """)
-        
+
         self.disconnect_btn.setObjectName("disconnect_btn")
+        self.show_window_btn.setObjectName("show_window_btn")
     
     def find_tunnel_process(self) -> Optional[int]:
         """Find ConnectTunnel process ID"""
