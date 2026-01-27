@@ -1,0 +1,48 @@
+# ConnectTunnel Manager - GitHub Repository Ready
+
+## Repository Information
+- URL: https://github.com/mrmagicbg/connecttunnel-manager
+- License: MIT
+- Version: 1.0.1
+- Platform: Linux (KDE Plasma optimized)
+
+## What's Included
+- Control Panel: Desktop GUI for managing ConnectTunnel
+- CLI Helper: Command-line interface for automation
+- Complete documentation (4000+ lines)
+- Professional installer with dependency management
+
+## Key Features
+- ✅ Simple installation via git clone
+- ✅ Clean, modern PyQt5 interface
+- ✅ Fast disconnect (2-3 seconds, no freeze)
+- ✅ Single-instance protection
+- ✅ Desktop integration (.desktop files)
+- ✅ Comprehensive documentation
+
+## Installation
+```bash
+git clone https://github.com/mrmagicbg/connecttunnel-manager.git
+cd connecttunnel-manager
+bash install.sh
+```
+
+## Files Summary
+- 2 executable tools (control-panel, helper)
+- 1 desktop shortcut
+- 11 markdown documentation files
+- 1 installer script
+- MIT License included
+
+## Documentation
+- README.md - Main documentation with badges
+- QUICKSTART.md - 2-minute setup guide
+- INSTALL.md - Detailed installation instructions
+- TROUBLESHOOTING.md - Common issues & solutions
+- CHANGELOG.md - Version history with GitHub publish note
+- USAGE_GUIDE.md - Complete usage documentation
+- GUI_OPTIONS.md - GUI features overview
+
+## Ready for GitHub Push
+All files cleaned and consolidated. No tray/taskbar references remain.
+Professional README with GitHub badges and clone instructions.

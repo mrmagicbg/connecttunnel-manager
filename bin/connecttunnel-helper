@@ -1,0 +1,268 @@
+#!/bin/bash
+#
+# ConnectTunnel KDE Plasma Helper
+# ==============================
+# 
+# A simpler wrapper for ConnectTunnel on KDE Plasma systems
+# Provides easy disconnect and exit capabilities via keyboard shortcuts or menu
+#
+# Usage:
+#   ./connecttunnel_kde_helper.sh              # Start with GUI helper
+#   ./connecttunnel_kde_helper.sh --disconnect # Disconnect immediately
+#   ./connecttunnel_kde_helper.sh --status     # Check status
+#
+
+set -e
+
+TUNNEL_PATH="/usr/local/Aventail"
+UI_SCRIPT="$TUNNEL_PATH/startctui.sh"
+CONNECT_SCRIPT="$TUNNEL_PATH/startct.sh"
+PID_FILE="/tmp/connecttunnel_pid"
+STATUS_FILE="/tmp/connecttunnel_status"
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check if ConnectTunnel is installed
+check_installation() {
+    if [ ! -f "$UI_SCRIPT" ]; then
+        echo -e "${RED}Error: ConnectTunnel not found at $TUNNEL_PATH${NC}"
+        exit 1
+    fi
+}
+
+# Find ConnectTunnel process
+find_tunnel_pid() {
+    # Look for the Java process running SnwlConnect.jar
+    pgrep -f "SnwlConnect.jar" 2>/dev/null || pgrep -f "startctui.sh" 2>/dev/null || true
+}
+
+# Start tunnel UI
+start_tunnel() {
+    if find_tunnel_pid > /dev/null 2>&1; then
+        echo -e "${YELLOW}ConnectTunnel is already running${NC}"
+        return 0
+    fi
+    
+    echo -e "${GREEN}Starting ConnectTunnel...${NC}"
+    bash "$UI_SCRIPT" &
+    PID=$!
+    echo $PID > "$PID_FILE"
+    echo "running" > "$STATUS_FILE"
+    
+    # Wait a moment and check if it started successfully
+    sleep 2
+    if find_tunnel_pid > /dev/null 2>&1; then
+        echo -e "${GREEN}ConnectTunnel started successfully${NC}"
+        return 0
+    else
+        echo -e "${RED}Failed to start ConnectTunnel${NC}"
+        rm -f "$PID_FILE" "$STATUS_FILE"
+        return 1
+    fi
+}
+
+# Disconnect tunnel
+disconnect_tunnel() {
+    echo -e "${YELLOW}Disconnecting ConnectTunnel...${NC}"
+    
+    # Try to gracefully stop the daemon first
+    if [ -f "$CONNECT_SCRIPT" ]; then
+        bash "$CONNECT_SCRIPT" stop 2>/dev/null || true
+    fi
+    
+    sleep 1
+    
+    # Kill any remaining Java processes for ConnectTunnel
+    PIDS=$(find_tunnel_pid) || true
+    if [ -n "$PIDS" ]; then
+        echo "Killing ConnectTunnel processes: $PIDS"
+        echo "$PIDS" | xargs kill -15 2>/dev/null || true
+        sleep 1
+        
+        # Force kill if still running
+        echo "$PIDS" | xargs kill -9 2>/dev/null || true
+    fi
+    
+    rm -f "$PID_FILE" "$STATUS_FILE"
+    echo -e "${GREEN}ConnectTunnel disconnected${NC}"
+}
+
+# Show status
+show_status() {
+    if find_tunnel_pid > /dev/null 2>&1; then
+        echo -e "${GREEN}ConnectTunnel: CONNECTED${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}ConnectTunnel: DISCONNECTED${NC}"
+        return 1
+    fi
+}
+
+# Show GUI menu using zenity or kdialog
+show_menu() {
+    if ! find_tunnel_pid > /dev/null 2>&1; then
+        # Not running, offer to connect
+        if command -v kdialog &> /dev/null; then
+            kdialog --yesno "ConnectTunnel is not running. Start it now?" --title "ConnectTunnel Manager"
+        elif command -v zenity &> /dev/null; then
+            zenity --question --text="ConnectTunnel is not running. Start it now?" --title="ConnectTunnel Manager"
+        else
+            read -p "Start ConnectTunnel? (y/n) " -n 1 -r
+            echo
+        fi
+        
+        if [ $? -eq 0 ]; then
+            start_tunnel
+        fi
+    else
+        # Running, offer menu
+        if command -v kdialog &> /dev/null; then
+            CHOICE=$(kdialog --menu "ConnectTunnel is running" \
+                "Show_Window" "Show Window" \
+                "Disconnect" "Disconnect" \
+                "Status" "Show Status" \
+                "Exit" "Exit Manager" \
+                --title="ConnectTunnel Manager")
+        elif command -v zenity &> /dev/null; then
+            CHOICE=$(zenity --list \
+                --title="ConnectTunnel Manager" \
+                --text="Select an action:" \
+                --column="Action" \
+                "Show Window" \
+                "Disconnect" \
+                "Show Status" \
+                "Exit Manager")
+        else
+            echo "ConnectTunnel Management Options:"
+            echo "1. Show Window"
+            echo "2. Disconnect"
+            echo "3. Show Status"
+            echo "4. Exit"
+            read -p "Choose an option (1-4): " CHOICE
+        fi
+        
+        case "$CHOICE" in
+            "Show_Window"|"Show Window"|1)
+                bring_window_to_front
+                ;;
+            "Disconnect"|2)
+                disconnect_tunnel
+                show_menu  # Show menu again after disconnect
+                ;;
+            "Show_Status"|"Status"|"Show Status"|3)
+                show_status
+                ;;
+            *)
+                exit 0
+                ;;
+        esac
+    fi
+}
+
+# Bring ConnectTunnel window to front
+bring_window_to_front() {
+    # Try using wmctrl (works on most Linux DEs)
+    if command -v wmctrl &> /dev/null; then
+        wmctrl -a "SnwlConnect" 2>/dev/null || wmctrl -a "Connect" 2>/dev/null || true
+    # Try xdotool as fallback
+    elif command -v xdotool &> /dev/null; then
+        xdotool search --name "SnwlConnect" windowactivate 2>/dev/null || true
+    fi
+    
+    echo -e "${GREEN}Attempted to bring window to front${NC}"
+}
+
+# Create keyboard shortcut helper (prints command for user to add)
+setup_shortcuts() {
+    echo "To set up keyboard shortcuts in KDE Plasma:"
+    echo ""
+    echo "1. Open System Settings"
+    echo "2. Go to: Shortcuts > Custom Shortcuts"
+    echo "3. Create a new group called 'ConnectTunnel'"
+    echo "4. Add these shortcuts:"
+    echo ""
+    echo "   Disconnect (Ctrl+Alt+D):"
+    echo "     Command: $0 --disconnect"
+    echo ""
+    echo "   Show Menu (Ctrl+Alt+T):"
+    echo "     Command: $0 --menu"
+    echo ""
+    echo "   Toggle (Ctrl+Alt+C):"
+    echo "     Command: $0 --toggle"
+    echo ""
+}
+
+# Toggle connect/disconnect
+toggle_tunnel() {
+    if find_tunnel_pid > /dev/null 2>&1; then
+        disconnect_tunnel
+    else
+        start_tunnel
+    fi
+}
+
+# Main command dispatcher
+case "$1" in
+    --disconnect)
+        check_installation
+        disconnect_tunnel
+        ;;
+    --connect)
+        check_installation
+        start_tunnel
+        ;;
+    --toggle)
+        check_installation
+        toggle_tunnel
+        ;;
+    --status)
+        check_installation
+        show_status
+        ;;
+    --menu)
+        check_installation
+        show_menu
+        ;;
+    --show-window)
+        check_installation
+        bring_window_to_front
+        ;;
+    --setup-shortcuts)
+        setup_shortcuts
+        ;;
+    --help|--usage|-h)
+        cat << EOF
+ConnectTunnel KDE Plasma Helper
+================================
+
+Usage: $0 [COMMAND]
+
+Commands:
+  --connect              Start ConnectTunnel
+  --disconnect           Stop ConnectTunnel
+  --toggle               Toggle connect/disconnect
+  --status               Show current status
+  --menu                 Show interactive menu
+  --show-window          Bring window to front
+  --setup-shortcuts      Show instructions for keyboard shortcuts
+  --help                 Show this help message
+
+Examples:
+  $0 --toggle
+  $0 --disconnect
+  $0 --menu
+
+For keyboard shortcuts, run:
+  $0 --setup-shortcuts
+
+EOF
+        ;;
+    *)
+        check_installation
+        show_menu
+        ;;
+esac

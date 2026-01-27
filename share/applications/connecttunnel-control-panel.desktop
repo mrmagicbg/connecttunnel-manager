@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ConnectTunnel Control Panel
+GenericName=VPN Connection Manager
+Comment=Manage ConnectTunnel VPN connections with a graphical control panel
+Exec=python3 INSTALL_PREFIX/bin/connecttunnel-control-panel
+Icon=network-vpn
+Terminal=false
+Categories=Network;RemoteAccess;Qt;
+Keywords=vpn;tunnel;connect;network;sonicwall;aventail;
+StartupNotify=true
