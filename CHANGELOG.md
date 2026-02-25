@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.2] - 2026-02-26
+
+### 🐛 Fixed
+- **`find_tunnel_pid` always returned exit 0**: Removed trailing `|| true` that
+  masked the actual exit code, making running/stopped detection unreliable
+- **`show_menu` readline fallback wrong check**: Condition was testing `$?` (the
+  exit code of the preceding `echo`) instead of `$REPLY` (the actual user input);
+  readline history loading now triggers correctly only when user confirms with Y/y
+- **`install.sh --prefix` silently ignored**: `BIN_DIR`, `SHARE_DIR`,
+  `APPLICATIONS_DIR`, and `DOC_DIR` were computed at file load time before
+  argument parsing; moved recomputation inside `main()` after `--prefix` is parsed
+- **`debug-disconnect.sh` missing `read -r`**: Added `-r` flag to prevent
+  backslash interpretation in the "Press Enter" prompt
+- **Control Panel UI thread freeze on disconnect**: Replaced two sequential
+  `time.sleep(1)` calls in `disconnect_tunnel()` (holding the Qt event loop for
+  2 s) with a non-blocking `QTimer.singleShot` chain using
+  `_check_after_sigterm()` and `_finalize_disconnect()` callbacks
+- **Unused `import time`** removed from control panel (no longer needed after
+  sleep → QTimer migration)
+- **Bare `except:` in lock file cleanup**: Tightened to `except OSError as e:`
+  with stderr logging
+
+---
+
 ## [1.0.1] - 2026-01-27
 
 ### � Published

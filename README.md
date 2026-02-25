@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Linux-blue.svg)](https://www.linux.org/)
 [![Python](https://img.shields.io/badge/Python-3.6%2B-blue.svg)](https://www.python.org/)
 
-Version: 1.0.0  
+Version: 1.0.2  
 License: MIT  
 Platform: Linux (optimized for KDE Plasma)  
 Repository: https://github.com/mrmagicbg/connecttunnel-manager
