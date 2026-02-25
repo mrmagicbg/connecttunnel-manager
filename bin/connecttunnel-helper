@@ -37,7 +37,7 @@ check_installation() {
 # Find ConnectTunnel process
 find_tunnel_pid() {
     # Look for the Java process running SnwlConnect.jar
-    pgrep -f "SnwlConnect.jar" 2>/dev/null || pgrep -f "startctui.sh" 2>/dev/null || true
+    pgrep -f "SnwlConnect.jar" 2>/dev/null || pgrep -f "startctui.sh" 2>/dev/null
 }
 
 # Start tunnel UI
@@ -106,16 +106,18 @@ show_status() {
 show_menu() {
     if ! find_tunnel_pid > /dev/null 2>&1; then
         # Not running, offer to connect
+        local _confirmed=false
         if command -v kdialog &> /dev/null; then
-            kdialog --yesno "ConnectTunnel is not running. Start it now?" --title "ConnectTunnel Manager"
+            kdialog --yesno "ConnectTunnel is not running. Start it now?" --title "ConnectTunnel Manager" && _confirmed=true
         elif command -v zenity &> /dev/null; then
-            zenity --question --text="ConnectTunnel is not running. Start it now?" --title="ConnectTunnel Manager"
+            zenity --question --text="ConnectTunnel is not running. Start it now?" --title="ConnectTunnel Manager" && _confirmed=true
         else
-            read -p "Start ConnectTunnel? (y/n) " -n 1 -r
+            read -r -p "Start ConnectTunnel? (y/n) " -n 1
             echo
+            [[ $REPLY =~ ^[Yy]$ ]] && _confirmed=true
         fi
         
-        if [ $? -eq 0 ]; then
+        if $_confirmed; then
             start_tunnel
         fi
     else

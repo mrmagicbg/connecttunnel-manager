@@ -15,7 +15,6 @@ import sys
 import os
 import subprocess
 import signal
-import time
 import fcntl
 from pathlib import Path
 from typing import Optional
@@ -151,6 +150,9 @@ class ConnectTunnelControlPanel(QMainWindow):
         self.statusBar().showMessage("Ready")
         
         # Apply stylesheet
+        # Object names must be set BEFORE setStyleSheet so Qt can resolve selectors immediately
+        self.disconnect_btn.setObjectName("disconnect_btn")
+        self.show_window_btn.setObjectName("show_window_btn")
         self.apply_stylesheet()
     
     def apply_stylesheet(self):
@@ -238,8 +240,8 @@ class ConnectTunnelControlPanel(QMainWindow):
             }
         """)
 
-        self.disconnect_btn.setObjectName("disconnect_btn")
-        self.show_window_btn.setObjectName("show_window_btn")
+        # Note: object names are set in init_ui() before this call so Qt resolves
+        # the #disconnect_btn / #show_window_btn selectors immediately.
     
     def find_tunnel_process(self) -> Optional[int]:
         """Find ConnectTunnel process ID"""
@@ -330,13 +332,14 @@ class ConnectTunnelControlPanel(QMainWindow):
             self.connect_btn.setEnabled(True)
     
     def verify_connection(self):
-        """Verify connection after starting"""
+        """Verify connection after starting — updates info text, no intrusive modal."""
         if self.find_tunnel_process():
-            QMessageBox.information(
-                self, "Connected",
-                "ConnectTunnel started successfully!\n\n"
-                "The tunnel window should appear shortly."
+            self.info_text.setPlainText(
+                "✅ Connected successfully!\n"
+                "The tunnel window should appear shortly.\n"
+                "Click 'Show Tunnel Window' to bring it to the foreground."
             )
+            self.statusBar().showMessage("Connected")
         else:
             QMessageBox.warning(
                 self, "Connection Failed",
@@ -381,75 +384,61 @@ class ConnectTunnelControlPanel(QMainWindow):
             self.info_text.append("→ Sending SIGTERM to ConnectTunnel process...")
             
             # First, try graceful SIGTERM
-            sigterm_result = subprocess.run(
+            subprocess.run(
                 ["pkill", "-TERM", "-f", "SnwlConnect.jar"],
                 timeout=2,
                 capture_output=True
             )
             
-            # Give it a moment to shut down gracefully
+            # Schedule post-SIGTERM check without blocking the event loop
             self.info_text.append("→ Waiting for graceful shutdown...")
-            time.sleep(1)
-            
-            # Check if still running
-            check_result = subprocess.run(
-                ["pgrep", "-f", "SnwlConnect.jar"],
-                capture_output=True
-            )
-            
-            if check_result.returncode == 0:
-                # Still running, force kill
-                self.info_text.append("→ Process still running, forcing SIGKILL...")
-                subprocess.run(
-                    ["pkill", "-9", "-f", "SnwlConnect.jar"],
-                    timeout=2,
-                    capture_output=True
-                )
-                subprocess.run(
-                    ["pkill", "-9", "-f", "startctui.sh"],
-                    timeout=2,
-                    capture_output=True
-                )
-                time.sleep(1)
-            else:
-                self.info_text.append("→ Process stopped gracefully")
-            
-            # Final verification
-            final_check = subprocess.run(
-                ["pgrep", "-f", "SnwlConnect.jar"],
-                capture_output=True
-            )
-            
-            if final_check.returncode == 0:
-                # Still running - this is rare
-                QMessageBox.warning(
-                    self, "Disconnect Warning",
-                    "ConnectTunnel process may still be running.\n"
-                    "You may need to disconnect manually using:\n"
-                    "sudo pkill -9 -f SnwlConnect"
-                )
-                self.info_text.setPlainText("⚠️ Disconnection incomplete - process may still be running")
-            else:
-                # Successfully disconnected
-                QMessageBox.information(
-                    self, "Disconnected",
-                    "ConnectTunnel has been disconnected."
-                )
-                self.info_text.setPlainText("✅ Disconnected successfully.")
+            QTimer.singleShot(1000, self._check_after_sigterm)
             
         except Exception as e:
-            # Any error during disconnect
             QMessageBox.warning(
                 self, "Disconnect Error",
-                f"Error during disconnect:\n{str(e)}\n\n"
+                f"Error sending SIGTERM:\n{str(e)}\n\n"
                 "The tunnel may still be running."
             )
             self.info_text.setPlainText(f"⚠️ Disconnect error: {str(e)}")
-        
-        finally:
-            # Re-enable button and force status refresh
             self.disconnect_btn.setEnabled(True)
             QTimer.singleShot(500, self.check_connection_status)
+
+    def _check_after_sigterm(self):
+        """Second disconnect phase: check state after SIGTERM grace period."""
+        check_result = subprocess.run(
+            ["pgrep", "-f", "SnwlConnect.jar"],
+            capture_output=True
+        )
+        if check_result.returncode == 0:
+            self.info_text.append("→ Process still running, forcing SIGKILL...")
+            subprocess.run(["pkill", "-9", "-f", "SnwlConnect.jar"], timeout=2, capture_output=True)
+            subprocess.run(["pkill", "-9", "-f", "startctui.sh"], timeout=2, capture_output=True)
+            QTimer.singleShot(1000, self._finalize_disconnect)
+        else:
+            self.info_text.append("→ Process stopped gracefully")
+            self._finalize_disconnect()
+
+    def _finalize_disconnect(self):
+        """Final disconnect phase: verify and report result."""
+        final_check = subprocess.run(
+            ["pgrep", "-f", "SnwlConnect.jar"],
+            capture_output=True
+        )
+        if final_check.returncode == 0:
+            QMessageBox.warning(
+                self, "Disconnect Warning",
+                "ConnectTunnel process may still be running.\n"
+                "You may need to disconnect manually using:\n"
+                "sudo pkill -9 -f SnwlConnect"
+            )
+            self.info_text.setPlainText("⚠️ Disconnection incomplete - process may still be running")
+        else:
+            QMessageBox.information(self, "Disconnected", "ConnectTunnel has been disconnected.")
+            self.info_text.setPlainText("✅ Disconnected successfully.")
+        
+        self.disconnect_btn.setEnabled(True)
+        QTimer.singleShot(500, self.check_connection_status)
     
     def show_tunnel_window(self):
         """Bring tunnel window to front"""
@@ -542,7 +531,7 @@ def main():
     window = ConnectTunnelControlPanel()
     window.show()
     
-    exit_code = app.exec_()
+    exit_code = app.exec()
     
     # Release lock
     if lock_fd:
@@ -550,8 +539,8 @@ def main():
         lock_fd.close()
         try:
             lock_file.unlink()
-        except:
-            pass
+        except OSError as e:
+            print(f"Warning: could not remove lock file {lock_file}: {e}", file=sys.stderr)
     
     sys.exit(exit_code)
 

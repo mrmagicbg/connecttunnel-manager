@@ -399,7 +399,13 @@ main() {
                 ;;
         esac
     done
-    
+
+    # Recompute directory paths now that INSTALL_PREFIX may have been overridden by --prefix
+    BIN_DIR="${INSTALL_PREFIX}/bin"
+    SHARE_DIR="${INSTALL_PREFIX}/share"
+    APPLICATIONS_DIR="${SHARE_DIR}/applications"
+    DOC_DIR="${SHARE_DIR}/doc/connecttunnel-manager"
+
     # Check ConnectTunnel installation
     check_connecttunnel
     echo ""

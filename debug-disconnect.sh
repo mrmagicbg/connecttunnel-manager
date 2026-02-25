@@ -34,7 +34,7 @@ fi
 echo ""
 echo "4. Testing disconnect sequence..."
 echo ""
-read -p "Press Enter to test SIGTERM (graceful shutdown)..."
+read -r -p "Press Enter to test SIGTERM (graceful shutdown)..."
 
 echo "→ Sending SIGTERM..."
 pkill -TERM -f "SnwlConnect.jar"
