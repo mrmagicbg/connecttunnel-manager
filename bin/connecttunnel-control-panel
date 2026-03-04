@@ -32,7 +32,11 @@ class ConnectTunnelControlPanel(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        self.tunnel_path = Path("/usr/local/Aventail")
+        # Allow overriding the ConnectTunnel installation path via environment
+        # variable CONNECTTUNNEL_PATH. Default is the standard SonicWall path.
+        self.tunnel_path = Path(
+            os.environ.get("CONNECTTUNNEL_PATH", "/usr/local/Aventail")
+        )
         self.ui_script = self.tunnel_path / "startctui.sh"
         self.connect_script = self.tunnel_path / "startct.sh"
         self.process: Optional[subprocess.Popen] = None

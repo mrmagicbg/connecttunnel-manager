@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Linux-blue.svg)](https://www.linux.org/)
 [![Python](https://img.shields.io/badge/Python-3.6%2B-blue.svg)](https://www.python.org/)
 
-Version: 1.0.2  
+Version: 1.0.3  
 License: MIT  
 Platform: Linux (optimized for KDE Plasma)  
 Repository: https://github.com/mrmagicbg/connecttunnel-manager
@@ -174,16 +174,24 @@ connecttunnel-helper --setup-shortcuts
 
 ### Custom ConnectTunnel Path
 
-If ConnectTunnel is installed in a non-standard location, edit the scripts:
+If ConnectTunnel is installed in a non-standard location, set the
+`CONNECTTUNNEL_PATH` environment variable — no file editing required:
 
 ```bash
-# Edit in each bin/ script
-nano ~/.local/bin/connecttunnel-control-panel
+# One-off launch
+CONNECTTUNNEL_PATH=/opt/Aventail connecttunnel-control-panel
 
-tunnel_path = Path("/usr/local/Aventail")
-# To your path:
-tunnel_path = Path("/opt/Aventail")
+# Persistent — add to ~/.bashrc or ~/.zshrc
+export CONNECTTUNNEL_PATH=/opt/Aventail
 ```
+
+You can also pass it to the installer so the variable propagates during install:
+
+```bash
+CONNECTTUNNEL_PATH=/opt/Aventail bash install.sh
+```
+
+Alternatively, edit the scripts directly after installation:
 
 ### Autostart Setup
 

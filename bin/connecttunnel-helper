@@ -14,7 +14,9 @@
 
 set -e
 
-TUNNEL_PATH="/usr/local/Aventail"
+# Allow overriding the ConnectTunnel installation path via environment variable.
+# Default is the standard SonicWall installation path.
+TUNNEL_PATH="${CONNECTTUNNEL_PATH:-/usr/local/Aventail}"
 UI_SCRIPT="$TUNNEL_PATH/startctui.sh"
 CONNECT_SCRIPT="$TUNNEL_PATH/startct.sh"
 PID_FILE="/tmp/connecttunnel_pid"
@@ -69,14 +71,14 @@ start_tunnel() {
 disconnect_tunnel() {
     echo -e "${YELLOW}Disconnecting ConnectTunnel...${NC}"
     
-    # Try to gracefully stop the daemon first
-    if [ -f "$CONNECT_SCRIPT" ]; then
-        bash "$CONNECT_SCRIPT" stop 2>/dev/null || true
-    fi
+    # Skip startct.sh stop: it spawns an extra Java process that shows an
+    # "Another instance running" dialog. Use direct process termination instead.
     
+    # Graceful SIGTERM first
+    pkill -TERM -f "SnwlConnect.jar" 2>/dev/null || true
     sleep 1
     
-    # Kill any remaining Java processes for ConnectTunnel
+    # Kill any remaining Java / UI processes for ConnectTunnel
     PIDS=$(find_tunnel_pid) || true
     if [ -n "$PIDS" ]; then
         echo "Killing ConnectTunnel processes: $PIDS"

@@ -7,7 +7,7 @@
 # GUI tools for managing SonicWall/Aventail ConnectTunnel on Linux systems,
 # especially KDE Plasma where the native Java tray icon lacks functionality.
 #
-# Version: 1.0.0
+# Version: 1.0.3
 # Author: ConnectTunnel Manager Project
 # License: MIT
 #
@@ -32,8 +32,10 @@ DOC_DIR="${SHARE_DIR}/doc/connecttunnel-manager"
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ConnectTunnel installation path
-CONNECTTUNNEL_PATH="/usr/local/Aventail"
+# ConnectTunnel installation path.
+# Can be overridden before running the installer:
+#   CONNECTTUNNEL_PATH=/opt/Aventail bash install.sh
+CONNECTTUNNEL_PATH="${CONNECTTUNNEL_PATH:-/usr/local/Aventail}"
 
 # Flags
 INSTALL_DESKTOP=true
@@ -48,7 +50,7 @@ print_header() {
     echo -e "${BLUE}"
     echo "═══════════════════════════════════════════════════════════"
     echo "  ConnectTunnel Manager - Installation Script"
-    echo "  Version 1.0.0"
+    echo "  Version 1.0.3"
     echo "═══════════════════════════════════════════════════════════"
     echo -e "${NC}"
 }

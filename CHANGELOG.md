@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.3] - 2026-03-04
+
+### ✨ Added
+- **`CONNECTTUNNEL_PATH` environment variable**: Both `connecttunnel-helper` and
+  `connecttunnel-control-panel` now honour a `CONNECTTUNNEL_PATH` env var, falling
+  back to `/usr/local/Aventail`. This allows non-standard installations without
+  editing any file:
+  ```bash
+  CONNECTTUNNEL_PATH=/opt/Aventail connecttunnel-control-panel
+  ```
+- **`install.sh` env-var passthrough**: `CONNECTTUNNEL_PATH` is now read and
+  forwarded by the installer so custom paths propagate to the installed scripts
+  automatically:
+  ```bash
+  CONNECTTUNNEL_PATH=/opt/Aventail bash install.sh
+  ```
+
+### 🐛 Fixed
+- **`connecttunnel-helper` `disconnect_tunnel` still calling `startct.sh stop`**:
+  This regression was documented as fixed in v1.0.1 but never applied to the source
+  file. `startct.sh stop` spawns an extra Java process that shows an
+  "Another instance running" dialog and blocks orderly shutdown. Now uses direct
+  `pkill -TERM -f SnwlConnect.jar` → SIGKILL fallback, consistent with how the
+  Control Panel already handled disconnect.
+- **Installed binaries pointed to archive path**: After the initial install session
+  the helper and control panel were hardcoded to the archive extraction path; now
+  correctly default to `/usr/local/Aventail`.
+
+### 🔧 Changed
+- `install.sh` version bump: header and banner now report `1.0.3`
+
+---
+
 ## [1.0.2] - 2026-02-26
 
 ### 🐛 Fixed
