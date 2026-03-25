@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-03-26
+
+### ✨ Added
+- **Unified installer with three modes** — `install.sh` now presents an interactive
+  menu to choose between:
+  - **Mode 1 — GNOME**: installs Java 11, ConnectTunnel (from the bundled package),
+    patches the start scripts for Java 11, and optionally installs the Manager.
+  - **Mode 2 — KDE**: same as GNOME but the Manager is installed automatically
+    because the native Java tray icon lacks a functional Disconnect/Exit menu on
+    KDE Plasma.
+  - **Mode 3 — Uninstall**: removes Manager tools and optionally the ConnectTunnel
+    VPN client itself (calls the vendor `uninstall.sh`).
+- **Non-interactive mode flags**: `--gnome`, `--kde`, `--uninstall` for scripted use.
+- **Java 11 installation**: the installer detects whether `openjdk-11-jre` is present
+  and installs it via `apt` if missing. Ubuntu 24.04 does not ship Java 11 by
+  default, but `SnwlConnect.jar` requires it exactly.
+- **Java 11 start-script patch**: after ConnectTunnel is installed, both
+  `startctui.sh` and `startct.sh` receive an `export JAVA_HOME` / `export PATH`
+  block after the shebang so every subsequent launch uses Java 11.
+- **Bundled ConnectTunnel package**: `install/ConnectTunnel_Linux64-12.50.00212/`
+  is now treated as the source package for ConnectTunnel installation (version
+  12.50.00212). The installer calls the vendor `install.sh --auto` under `sudo`.
+- **Desktop-environment auto-detection**: the installer hints the recommended
+  mode based on `$XDG_CURRENT_DESKTOP` / `$DESKTOP_SESSION`.
+- **Enhanced uninstaller** (`connecttunnel-manager-uninstall`): now accepts
+  `--vpn` flag to also remove the ConnectTunnel VPN client via the vendor script.
+- **`JAVA11_HOME` environment variable**: allows overriding the expected Java 11
+  home path before running the installer.
+
+### 🔧 Changed
+- `install.sh` fully rewritten — old Manager-only installer replaced by the
+  unified installer described above.
+- README rewritten to document the new modes, Java 11 requirements, and
+  troubleshooting steps for Ubuntu 24.04.
+- Version bumped to 2.0.0.
+
+### 🗑️ Removed
+- `--auto`, `--no-deps`, `--prefix` flags from the old installer (no longer
+  applicable; use `--gnome` / `--kde` for non-interactive installs).
+
+---
+
 ## [1.0.3] - 2026-03-04
 
 ### ✨ Added
